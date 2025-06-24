@@ -1,4 +1,10 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 
 class Tag {
   id: number;
