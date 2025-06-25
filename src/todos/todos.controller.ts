@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   HttpStatus,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   ParseIntPipe,
@@ -16,59 +17,44 @@ import {
   Res,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { Tag } from './entities/tag.entitiy';
-import { PIC } from './entities/pic.entity';
+import { TodoBody } from './dtos/res/todo.body.dto';
 import { CreateTodoBody } from './dtos/req/create-todo.body.dto';
 import { UpdateTodoBody } from './dtos/req/update-todo.body.dto';
 import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
-
-const tags: Tag[] = [
-  { id: 1, name: 'procurement' },
-  { id: 2, name: 'office supply' },
-  { id: 3, name: 'advertisement' },
-  { id: 4, name: 'meeting' },
-];
-
-const pics: PIC[] = [
-  { id: 1, name: 'Chyntia' },
-  { id: 2, name: 'John' },
-];
-
-class Todo {
-  id: number;
-  title: string;
-  tags: Tag[];
-  pic: PIC;
-  finished: boolean;
-  deadline: Date;
-}
-
-const todos: Todo[] = [
-  {
-    id: 1,
-    title: 'prepare the launching of new product',
-    tags: [tags[0], tags[2]],
-    pic: pics[0],
-    deadline: new Date(),
-    finished: false,
-  },
-  {
-    id: 2,
-    title: 'hold discussion about the upcoming product features',
-    tags: [tags[3]],
-    pic: pics[1],
-    deadline: new Date(),
-    finished: false,
-  },
-];
+import { TodosService } from './todos.service';
+import { TodoNotFoundRepositoryException } from './exceptions/todo-not-found.exception.repository';
+import { TagNotFoundRepositoryException } from './exceptions/tag-not-found.exception.repository';
+import { PicNotFoundRepositoryException } from './exceptions/pic-not-found.exception.repository';
 
 @Controller('todos')
 export class TodosController {
+  constructor(private todosService: TodosService) {}
+
   @Get()
-  getAllTodos(@Query('title') title: string): Todo[] {
-    let tds = todos;
-    if (title) tds = tds.filter((td) => td.title.includes(title));
-    return tds;
+  getAllTodos(@Query('title') title: string): TodoBody[] {
+    try {
+      const tds = this.todosService.getAllTodos({
+        title,
+      });
+      return tds.map((td) => ({
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      }));
+    } catch {
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
   }
 
   @Post('/example')
@@ -81,125 +67,204 @@ export class TodosController {
   }
 
   @Get('/:id')
-  getTodo(@Param('id', ParseIntPipe) id: number): Todo {
-    const td = todos.find((t) => t.id === id);
-    if (!td) {
-      throw new NotFoundException({
-        message: 'todo not found',
-        error: 'resource not found',
-        statusCode: HttpStatus.NOT_FOUND,
+  getTodo(@Param('id', ParseIntPipe) id: number): TodoBody {
+    try {
+      const td = this.todosService.getTodo({ id });
+      return {
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      };
+    } catch (error) {
+      if (error instanceof TodoNotFoundRepositoryException) {
+        throw new NotFoundException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      }
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
-    return td;
   }
 
   @Post()
-  createTodo(@Body() body: CreateTodoBody): Todo {
-    const tgs = tags.filter((t) => body.tagIds.includes(t.id) && t);
-    if (!tgs.length) {
-      throw new BadRequestException({
-        message: 'tag does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.BAD_REQUEST,
+  createTodo(@Body() body: CreateTodoBody): TodoBody {
+    try {
+      const td = this.todosService.createTodo({
+        title: body.title,
+        tagIds: body.tagIds,
+        picId: body.picId,
+        finished: body.finished,
+        deadline: new Date(body.deadline),
+      });
+      return {
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      };
+    } catch (error) {
+      if (error instanceof TagNotFoundRepositoryException) {
+        throw new BadRequestException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      } else if (error instanceof PicNotFoundRepositoryException) {
+        throw new BadRequestException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
-
-    const p = pics.find((p) => p.id === body.picId);
-    if (!p) {
-      throw new BadRequestException({
-        message: 'pic does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.BAD_REQUEST,
-      });
-    }
-
-    const newTd: Todo = {
-      id: todos[todos.length - 1].id + 1,
-      title: body.title,
-      tags: tgs,
-      pic: p,
-      finished: body.finished,
-      deadline: body.deadline,
-    };
-    todos.push(newTd);
-
-    return newTd;
   }
 
   @Put('/:id')
   updateTodo(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateTodoBody,
-  ): Todo {
-    const td = todos.find((t) => t.id === id);
-    if (!td) {
-      throw new NotFoundException({
-        message: 'todo does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.NOT_FOUND,
+  ): TodoBody {
+    try {
+      const td = this.todosService.updateTodo({
+        id,
+        title: body.title,
+        tagIds: body.tagIds,
+        picId: body.picId,
+        finished: body.finished,
+        deadline: new Date(body.deadline),
+      });
+      return {
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      };
+    } catch (error) {
+      if (error instanceof TodoNotFoundRepositoryException) {
+        throw new NotFoundException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      } else if (error instanceof TagNotFoundRepositoryException) {
+        throw new BadRequestException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      } else if (error instanceof PicNotFoundRepositoryException) {
+        throw new BadRequestException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
-
-    const tgs = tags.filter((t) => body.tagIds.includes(t.id) && t);
-    if (!tgs.length) {
-      throw new BadRequestException({
-        message: 'tag does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.BAD_REQUEST,
-      });
-    }
-
-    const p = pics.find((p) => p.id === body.picId);
-    if (!p) {
-      throw new BadRequestException({
-        message: 'pic does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.BAD_REQUEST,
-      });
-    }
-
-    td.title = body.title;
-    td.tags = tgs;
-    td.pic = p;
-    td.finished = body.finished;
-    td.deadline = body.deadline;
-
-    return td;
   }
 
   @Patch('/:id')
   patchTodoFinished(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: PatchTodoFinishedBody,
-  ): Todo {
-    const td = todos.find((t) => t.id === id);
-    if (!td) {
-      throw new NotFoundException({
-        message: 'todo does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.NOT_FOUND,
+  ): TodoBody {
+    try {
+      const td = this.todosService.patchTodoFinished({
+        id,
+        finished: body.finished,
+      });
+      return {
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      };
+    } catch (error) {
+      if (error instanceof TodoNotFoundRepositoryException) {
+        throw new NotFoundException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      }
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
-
-    td.finished = body.finished;
-
-    return td;
   }
 
   @Delete('/:id')
-  deleteTodo(@Param('id', ParseIntPipe) id: number): Todo {
-    const tdIdx = todos.findIndex((t) => t.id === id);
-    if (tdIdx === -1) {
-      throw new NotFoundException({
-        message: 'todo does not exist',
-        error: 'resource not found',
-        statusCode: HttpStatus.NOT_FOUND,
+  deleteTodo(@Param('id', ParseIntPipe) id: number): TodoBody {
+    try {
+      const td = this.todosService.deleteTodo({
+        id,
+      });
+      return {
+        id: td.id,
+        title: td.title,
+        tags: td.tags,
+        pic: td.pic,
+        finished: td.finished,
+        deadline: Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(td.deadline),
+      };
+    } catch (error) {
+      if (error instanceof TodoNotFoundRepositoryException) {
+        throw new NotFoundException({
+          message: error.message,
+          error: error.name,
+          statusCode: HttpStatus.NOT_FOUND,
+        });
+      }
+      throw new InternalServerErrorException({
+        message: 'something wrong on our side',
+        error: 'internal server error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
-
-    const oldTd = todos[tdIdx];
-    todos.splice(tdIdx, 1);
-
-    return oldTd;
   }
 }

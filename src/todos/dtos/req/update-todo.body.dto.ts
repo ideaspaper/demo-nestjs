@@ -27,5 +27,5 @@ export class UpdateTodoBody {
 
   @IsNotEmpty()
   @IsDateString()
-  deadline: Date;
+  deadline: string;
 }
