@@ -1,12 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpStatus,
   InternalServerErrorException,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -22,9 +20,7 @@ import { CreateTodoBody } from './dtos/req/create-todo.body.dto';
 import { UpdateTodoBody } from './dtos/req/update-todo.body.dto';
 import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
 import { TodosService } from './todos.service';
-import { TodoNotFoundRepositoryException } from './exceptions/todo-not-found.exception.repository';
-import { TagNotFoundRepositoryException } from './exceptions/tag-not-found.exception.repository';
-import { PicNotFoundRepositoryException } from './exceptions/pic-not-found.exception.repository';
+import { RepositoryException } from './exceptions/exception.repository';
 
 @Controller('todos')
 export class TodosController {
@@ -83,13 +79,7 @@ export class TodosController {
         }).format(td.deadline),
       };
     } catch (error) {
-      if (error instanceof TodoNotFoundRepositoryException) {
-        throw new NotFoundException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      }
+      if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
         error: 'internal server error',
@@ -121,19 +111,7 @@ export class TodosController {
         }).format(td.deadline),
       };
     } catch (error) {
-      if (error instanceof TagNotFoundRepositoryException) {
-        throw new BadRequestException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.BAD_REQUEST,
-        });
-      } else if (error instanceof PicNotFoundRepositoryException) {
-        throw new BadRequestException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.BAD_REQUEST,
-        });
-      }
+      if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
         error: 'internal server error',
@@ -169,25 +147,7 @@ export class TodosController {
         }).format(td.deadline),
       };
     } catch (error) {
-      if (error instanceof TodoNotFoundRepositoryException) {
-        throw new NotFoundException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      } else if (error instanceof TagNotFoundRepositoryException) {
-        throw new BadRequestException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.BAD_REQUEST,
-        });
-      } else if (error instanceof PicNotFoundRepositoryException) {
-        throw new BadRequestException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.BAD_REQUEST,
-        });
-      }
+      if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
         error: 'internal server error',
@@ -219,13 +179,7 @@ export class TodosController {
         }).format(td.deadline),
       };
     } catch (error) {
-      if (error instanceof TodoNotFoundRepositoryException) {
-        throw new NotFoundException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      }
+      if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
         error: 'internal server error',
@@ -253,13 +207,7 @@ export class TodosController {
         }).format(td.deadline),
       };
     } catch (error) {
-      if (error instanceof TodoNotFoundRepositoryException) {
-        throw new NotFoundException({
-          message: error.message,
-          error: error.name,
-          statusCode: HttpStatus.NOT_FOUND,
-        });
-      }
+      if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
         error: 'internal server error',
