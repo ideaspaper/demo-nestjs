@@ -13,6 +13,7 @@ import {
   Query,
   Req,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { TodoBody } from './dtos/res/todo.body.dto';
@@ -21,7 +22,9 @@ import { UpdateTodoBody } from './dtos/req/update-todo.body.dto';
 import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
 import { TodosService } from './todos.service';
 import { RepositoryException } from './exceptions/exception.repository';
+import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor';
 
+@UseInterceptors(ResponseInterceptor)
 @Controller('todos')
 export class TodosController {
   constructor(private todosService: TodosService) {}
