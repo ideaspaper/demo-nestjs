@@ -23,6 +23,7 @@ import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
 import { TodosService } from './todos.service';
 import { RepositoryException } from './exceptions/exception.repository';
 import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor';
+import { mapEntityToDto } from 'src/common/utils/mapper.util';
 
 @UseInterceptors(ResponseInterceptor)
 @Controller('todos')
@@ -35,18 +36,7 @@ export class TodosController {
       const tds = this.todosService.getAllTodos({
         title,
       });
-      return tds.map((td) => ({
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      }));
+      return tds.map((td) => mapEntityToDto(TodoBody, td));
     } catch {
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
@@ -69,18 +59,7 @@ export class TodosController {
   getTodo(@Param('id', ParseIntPipe) id: number): TodoBody {
     try {
       const td = this.todosService.getTodo({ id });
-      return {
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      };
+      return mapEntityToDto(TodoBody, td);
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -101,18 +80,7 @@ export class TodosController {
         finished: body.finished,
         deadline: new Date(body.deadline),
       });
-      return {
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      };
+      return mapEntityToDto(TodoBody, td);
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -137,18 +105,7 @@ export class TodosController {
         finished: body.finished,
         deadline: new Date(body.deadline),
       });
-      return {
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      };
+      return mapEntityToDto(TodoBody, td);
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -169,18 +126,7 @@ export class TodosController {
         id,
         finished: body.finished,
       });
-      return {
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      };
+      return mapEntityToDto(TodoBody, td);
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -197,18 +143,7 @@ export class TodosController {
       const td = this.todosService.deleteTodo({
         id,
       });
-      return {
-        id: td.id,
-        title: td.title,
-        tags: td.tags,
-        pic: td.pic,
-        finished: td.finished,
-        deadline: Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        }).format(td.deadline),
-      };
+      return mapEntityToDto(TodoBody, td);
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
