@@ -16,27 +16,28 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { TodoBody } from './dtos/res/todo.body.dto';
 import { CreateTodoBody } from './dtos/req/create-todo.body.dto';
 import { UpdateTodoBody } from './dtos/req/update-todo.body.dto';
 import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
 import { TodosService } from './todos.service';
 import { RepositoryException } from './exceptions/exception.repository';
 import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor';
-import { mapEntityToDto } from 'src/common/utils/mapper.util';
+import { Todo } from './entities/todo.entity';
+import { BodyTransformerInterceptor } from 'src/common/interceptors/body-transformer.interceptor';
 
+@UseInterceptors(BodyTransformerInterceptor)
 @UseInterceptors(ResponseInterceptor)
 @Controller('todos')
 export class TodosController {
   constructor(private todosService: TodosService) {}
 
   @Get()
-  getAllTodos(@Query('title') title: string): TodoBody[] {
+  getAllTodos(@Query('title') title: string): Todo[] {
     try {
       const tds = this.todosService.getAllTodos({
         title,
       });
-      return tds.map((td) => mapEntityToDto(TodoBody, td));
+      return tds;
     } catch {
       throw new InternalServerErrorException({
         message: 'something wrong on our side',
@@ -56,10 +57,10 @@ export class TodosController {
   }
 
   @Get('/:id')
-  getTodo(@Param('id', ParseIntPipe) id: number): TodoBody {
+  getTodo(@Param('id', ParseIntPipe) id: number): Todo {
     try {
       const td = this.todosService.getTodo({ id });
-      return mapEntityToDto(TodoBody, td);
+      return td;
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -71,7 +72,7 @@ export class TodosController {
   }
 
   @Post()
-  createTodo(@Body() body: CreateTodoBody): TodoBody {
+  createTodo(@Body() body: CreateTodoBody): Todo {
     try {
       const td = this.todosService.createTodo({
         title: body.title,
@@ -80,7 +81,7 @@ export class TodosController {
         finished: body.finished,
         deadline: new Date(body.deadline),
       });
-      return mapEntityToDto(TodoBody, td);
+      return td;
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -95,7 +96,7 @@ export class TodosController {
   updateTodo(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateTodoBody,
-  ): TodoBody {
+  ): Todo {
     try {
       const td = this.todosService.updateTodo({
         id,
@@ -105,7 +106,7 @@ export class TodosController {
         finished: body.finished,
         deadline: new Date(body.deadline),
       });
-      return mapEntityToDto(TodoBody, td);
+      return td;
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -120,13 +121,13 @@ export class TodosController {
   patchTodoFinished(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: PatchTodoFinishedBody,
-  ): TodoBody {
+  ): Todo {
     try {
       const td = this.todosService.patchTodoFinished({
         id,
         finished: body.finished,
       });
-      return mapEntityToDto(TodoBody, td);
+      return td;
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
@@ -138,12 +139,12 @@ export class TodosController {
   }
 
   @Delete('/:id')
-  deleteTodo(@Param('id', ParseIntPipe) id: number): TodoBody {
+  deleteTodo(@Param('id', ParseIntPipe) id: number): Todo {
     try {
       const td = this.todosService.deleteTodo({
         id,
       });
-      return mapEntityToDto(TodoBody, td);
+      return td;
     } catch (error) {
       if (error instanceof RepositoryException) throw error;
       throw new InternalServerErrorException({
