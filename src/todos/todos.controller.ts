@@ -29,10 +29,13 @@ import { BodyTransformerInterceptor } from 'src/common/interceptors/body-transfo
 @UseInterceptors(ResponseInterceptor)
 @Controller('todos')
 export class TodosController {
-  constructor(private todosService: TodosService) {}
+  constructor(private todosService: TodosService) { }
 
   @Get()
-  getAllTodos(@Query('title') title: string): Todo[] {
+  getAllTodos(@Req() req: any, @Query('title') title: string): Todo[] {
+    const requestId = req.headers['x-request-id'];
+    console.log(requestId);
+
     try {
       const tds = this.todosService.getAllTodos({
         title,
