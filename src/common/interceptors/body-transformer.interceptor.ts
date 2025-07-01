@@ -21,10 +21,7 @@ export class BodyTransformerInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data) => {
-        if (!dtoClass || !data) {
-          console.log("sini?");
-          return data;
-        }
+        if (!dtoClass || !data) return data;
 
         if (Array.isArray(data)) {
           return data.map((item) => mapEntityToDto(dtoClass, item));
