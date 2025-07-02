@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpStatus,
+  Inject,
   InternalServerErrorException,
   Param,
   ParseIntPipe,
@@ -19,22 +20,27 @@ import { Request, Response } from 'express';
 import { CreateTodoBody } from './dtos/req/create-todo.body.dto';
 import { UpdateTodoBody } from './dtos/req/update-todo.body.dto';
 import { PatchTodoFinishedBody } from './dtos/req/patch-todo-finished.body.dto';
-import { TodosService } from './todos.service';
 import { RepositoryException } from './exceptions/exception.repository';
 import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor';
 import { Todo } from './entities/todo.entity';
 import { BodyTransformerInterceptor } from 'src/common/interceptors/body-transformer.interceptor';
+import { TodosServiceItf } from './todos.service.interface';
 
 @UseInterceptors(BodyTransformerInterceptor)
 @UseInterceptors(ResponseInterceptor)
 @Controller('todos')
 export class TodosController {
-  constructor(private todosService: TodosService) { }
+  constructor(
+    @Inject('TodosServiceItf') private todosService: TodosServiceItf,
+    @Inject('VALUE_1') private value1: any,
+  ) { }
 
   @Get()
   getAllTodos(@Req() req: any, @Query('title') title: string): Todo[] {
     const requestId = req.headers['x-request-id'];
     console.log(requestId);
+    console.log('ENV', process.env.NODE_ENV);
+    console.log(this.value1.val1, this.value1.val2);
 
     try {
       const tds = this.todosService.getAllTodos({
