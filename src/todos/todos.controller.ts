@@ -38,12 +38,7 @@ export class TodosController {
   ) {}
 
   @Get()
-  getAllTodos(
-    @RequestId() requestId: string,
-    @Query('title') title: string,
-  ): Todo[] {
-    console.log('controller can access request id:', requestId);
-    console.log('controller can access config service:', this.configService.get('API_KEY'));
+  getAllTodos(@Query('title') title: string): Todo[] {
     try {
       const tds = this.todosService.getAllTodos({
         title,
@@ -59,7 +54,16 @@ export class TodosController {
   }
 
   @Post('/example')
-  example(@Req() req: Request, @Res() res: Response) {
+  example(
+    @RequestId() requestId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    console.info('controller can access request id:', requestId);
+    console.info(
+      'controller can access config service:',
+      this.configService.get('API_KEY'),
+    );
     console.info('req.body', req.body);
     res.json({
       message: 'success',
