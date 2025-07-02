@@ -1,23 +1,19 @@
-import { Injectable, Logger, NestMiddleware } from "@nestjs/common";
-import { randomUUID } from "crypto";
-import { NextFunction, Request, Response } from "express";
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { NextFunction, Request, Response } from 'express';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger(LoggerMiddleware.name);
 
   use(req: Request, res: Response, next: NextFunction): void {
-    const startTime = process.hrtime(); // Record start time dari suatu request
+    const startTime = process.hrtime();
 
-    const requestId = randomUUID();
-    req.headers['x-request-id'] = requestId;
-
-    res.on('finish', () => { // Masang event listener, untuk event yang namanya 'finish'
+    res.on('finish', () => {
       const [seconds, nanoseconds] = process.hrtime(startTime);
       const latency = (seconds * 1000 + nanoseconds / 1_000_000).toFixed(3);
 
       const logEntry = {
-        requestId,
+        requestId: req.headers['X-Request-Id'],
         timestamp: new Date().toISOString(),
         ip: req.ip,
         method: req.method,

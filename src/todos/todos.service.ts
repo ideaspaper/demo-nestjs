@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Todo } from './entities/todo.entity';
 import {
   CreateTodoParam,
@@ -9,11 +9,13 @@ import {
   TodosServiceItf,
   UpdateTodoParam,
 } from './todos.service.interface';
-import { TodosRepository } from './todos.repository';
+import { TodosRepositoryItf } from './todos.repository.interface';
 
 @Injectable()
 export class TodosService implements TodosServiceItf {
-  constructor(private todosRepository: TodosRepository) {}
+  constructor(
+    @Inject('TodosRepositoryItf') private todosRepository: TodosRepositoryItf,
+  ) {}
 
   getAllTodos(param: GetAllTodosParam): Todo[] {
     return this.todosRepository.getAllTodos({

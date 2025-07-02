@@ -1,4 +1,4 @@
-import {PartialType} from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/mapped-types';
 import { CreateTodoBody } from './create-todo.body.dto';
 
 export class UpdateTodoBody extends PartialType(CreateTodoBody) {

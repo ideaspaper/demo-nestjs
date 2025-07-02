@@ -25,6 +25,8 @@ import { ResponseInterceptor } from 'src/common/interceptors/response.intercepto
 import { Todo } from './entities/todo.entity';
 import { BodyTransformerInterceptor } from 'src/common/interceptors/body-transformer.interceptor';
 import { TodosServiceItf } from './todos.service.interface';
+import { RequestId } from 'src/common/decorators/request-id.decorator';
+import { ConfigService } from 'src/config/config.service';
 
 @UseInterceptors(BodyTransformerInterceptor)
 @UseInterceptors(ResponseInterceptor)
@@ -32,16 +34,16 @@ import { TodosServiceItf } from './todos.service.interface';
 export class TodosController {
   constructor(
     @Inject('TodosServiceItf') private todosService: TodosServiceItf,
-    @Inject('VALUE_1') private value1: any,
-  ) { }
+    private configService: ConfigService,
+  ) {}
 
   @Get()
-  getAllTodos(@Req() req: any, @Query('title') title: string): Todo[] {
-    const requestId = req.headers['x-request-id'];
-    console.log(requestId);
-    console.log('ENV', process.env.NODE_ENV);
-    console.log(this.value1.val1, this.value1.val2);
-
+  getAllTodos(
+    @RequestId() requestId: string,
+    @Query('title') title: string,
+  ): Todo[] {
+    console.log('controller can access request id:', requestId);
+    console.log('controller can access config service:', this.configService.get('API_KEY'));
     try {
       const tds = this.todosService.getAllTodos({
         title,
